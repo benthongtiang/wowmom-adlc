@@ -1,7 +1,7 @@
 ---
 id: REQ-001
 title: "WoW Mom Support Group Platform Core"
-status: approved
+status: complete
 deployable: true
 created: 2026-05-12
 updated: 2026-05-12
