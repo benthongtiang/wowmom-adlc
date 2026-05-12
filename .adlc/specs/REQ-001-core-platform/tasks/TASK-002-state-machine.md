@@ -1,7 +1,7 @@
 ---
 id: TASK-002
 title: "Implement Application State Machine and Notification Triggers"
-status: draft
+status: complete
 parent: REQ-001
 created: 2026-05-12
 updated: 2026-05-12

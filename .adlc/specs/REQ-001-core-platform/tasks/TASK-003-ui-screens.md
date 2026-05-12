@@ -1,7 +1,7 @@
 ---
 id: TASK-003
 title: "Implement Persona UI Navigation and Discovery Screens"
-status: draft
+status: complete
 parent: REQ-001
 created: 2026-05-12
 updated: 2026-05-12
