@@ -1,7 +1,7 @@
 ---
 id: TASK-001
 title: "Implement Core Database Models and Capacity Constraints"
-status: draft
+status: complete
 parent: REQ-001
 created: 2026-05-12
 updated: 2026-05-12
