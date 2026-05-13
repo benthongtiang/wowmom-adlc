@@ -3,7 +3,12 @@
     "allow": [
       "Bash(rtk ls *)",
       "Bash(rtk git *)",
-      "Bash(git init *)"
+      "Bash(git init *)",
+      "Bash(npm --version)",
+      "Bash(rtk grep *)",
+      "Bash(npm install *)",
+      "Bash(npm test *)",
+      "Bash(node -e \"const c = require\\('/Users/ben/Desktop/Work/delta/.worktrees/REQ-001/src/models/constants.js'\\); console.log\\(JSON.stringify\\(c, null, 2\\)\\);\")"
     ]
   }
 }
