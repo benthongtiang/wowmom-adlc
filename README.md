@@ -11,9 +11,10 @@
 
 ## 📖 Overview
 
-**WoW Mom** solves the operational bottlenecks of manual community onboarding. By combining rigid schema validation, asynchronous transactional email pipelines, and strict capacity enforcement rules, the system guarantees smooth candidate progression while preventing local group overbooking. 
+**WoW Mom** solves the operational bottlenecks of manual community onboarding. By combining rigid schema validation, asynchronous transactional email pipelines, and strict capacity enforcement rules, the system guarantees smooth candidate progression while preventing local group overbooking.
 
 The core system architecture acts as a secure intermediary serving three distinct personas:
+
 - 🤱 **Mothers:** Search available support structures, manage dynamic meeting preferences, and track live application statuses.
 - 🤝 **Group Leaders:** Facilitate peer-to-peer interviews, evaluate prospective members, and oversee automated team rosters.
 - 🛡️ **System Administrators:** Authorize onboarding pipelines, inspect system throughput, and monitor overall community health metrics.
@@ -23,14 +24,17 @@ The core system architecture acts as a secure intermediary serving three distinc
 ## ✨ Key Features & Business Rules
 
 ### 🔒 Strict Capacity Enforcement
+
 - **Membership Bound Constraints (`BR-2`):** Operational groups strictly maintain a minimum threshold of **2** and an absolute ceiling of **15** active participants.
 - **Pessimistic Gating Locks (`BR-3`):** Automatic systemic blocking of inbound requests targeting any group entity operating at maximum capacity. Listings instantly render dynamic `Full` badges across client interfaces.
 
 ### 🔄 Multi-Slot Interview Orchestration
+
 - **SLA Timelines (`BR-6`):** Triggers automated interview booking sequences within **7 days** of application creation.
 - **Decoupled Messaging:** Leverages asynchronous task workers (`BullMQ`) to dispatch templated candidate invite links via secure transactional SMTP relays.
 
 ### 🛡️ Built-in Privacy & Cooldowns
+
 - **Conditional Attribute Hydration (`BR-7`):** Sensitive personal information—including exact telephone contacts and detailed physical addresses—remains fully concealed from peer directories until an application officially transitions to `Active Participant`.
 - **Application Flow Control (`BR-1` & `BR-5`):** Restricts applicants to a maximum of **3 concurrent active pipelines** and enforces an automatic **30-day cooldown period** before re-submitting to previously rejected group targets.
 
@@ -62,7 +66,9 @@ graph LR
 ## 🚀 Getting Started
 
 ### 1. Prerequisites
+
 Ensure you have the following installed locally:
+
 - **Node.js** (`v18.0.0` or higher recommended)
 - **Git**
 
@@ -83,6 +89,7 @@ Copy the baseline configuration template to scaffold local environment keys:
 ```bash
 cp .env.example .env
 ```
+
 *(Ensure valid database and local SMTP connection parameters are mapped inside your newly populated `.env` file).*
 
 ### 4. Database Migrations
@@ -100,6 +107,7 @@ Launch the local development API server:
 ```bash
 npm run dev
 ```
+
 The server instances will mount and listen on your configured runtime port (defaulting to `http://localhost:3000`).
 
 ---
