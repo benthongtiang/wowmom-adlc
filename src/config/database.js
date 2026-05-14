@@ -19,7 +19,11 @@ if (process.env.NODE_ENV === 'test') {
 } else {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
-    sequelize = new Sequelize('sqlite::memory:', { logging: false });
+    sequelize = new Sequelize({
+      dialect: 'sqlite',
+      storage: ':memory:',
+      logging: false,
+    });
   } else {
     sequelize = new Sequelize(databaseUrl, {
       logging: false,
