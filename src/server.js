@@ -413,7 +413,7 @@ app.get('/', (req, res) => {
 
   <header>
     <div class="brand">
-      ✨ WoW Mom Platform UI
+      ✨ WoW Mom Platform UI2
     </div>
     <div class="status-badge">
       ● Connected to Live In-Memory API
