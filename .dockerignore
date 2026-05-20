@@ -1,0 +1,12 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+.adlc
+.claude
+.env
+adlc_evaluation_report.md
+CLAUDE.md
+README.md
+tests
+jest.config.js
