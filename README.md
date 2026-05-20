@@ -2,7 +2,8 @@
 
 [![Lifecycle: Gated ADLC](https://img.shields.io/badge/Lifecycle-Verified%20ADLC-2ea043?style=flat-square)](./adlc_evaluation_report.md)
 [![Node.js Engine](https://img.shields.io/badge/Node.js-%3E%3D18.0.0-339933?style=flat-square&logo=node.js)](package.json)
-[![Database: SQLite](https://img.shields.io/badge/Database-SQLite%20%2F%20Sequelize-003B57?style=flat-square&logo=sqlite)](src/config/database.js)
+[![Database: PostgreSQL / SQLite](https://img.shields.io/badge/Database-PostgreSQL%20%2F%20SQLite-003B57?style=flat-square&logo=postgresql)](src/config/database.js)
+[![Docker: Supported](https://img.shields.io/badge/Docker-Supported-2496ED?style=flat-square&logo=docker)](Dockerfile)
 [![Test Suite: Jest](https://img.shields.io/badge/Tested%20with-Jest-C21325?style=flat-square&logo=jest)](tests/)
 
 > A highly deterministic, event-driven platform orchestrating the registration, interview scheduling, and structured placement of new mothers into safe, localized peer support groups.
@@ -46,7 +47,7 @@ The core system architecture acts as a secure intermediary serving three distinc
 graph LR
     Client[Client UI] --> API[Express Core API]
     API --> Service[Service Layer Logic]
-    Service <--> DB[(SQLite / Sequelize)]
+    Service <--> DB[(PostgreSQL / SQLite)]
     Service -. Event Dispatched .-> Worker[Bull Task Worker]
     Worker --> SMTP[Nodemailer Relay]
     
@@ -57,7 +58,8 @@ graph LR
 | Layer | Component Technology | Role & Responsibility |
 | :--- | :--- | :--- |
 | **API Framework** | `Express.js` | REST routing handling cross-platform interface communications. |
-| **ORM / Data Tier**| `Sequelize` | Enforces indexing locks, thread-safe increments, and table queries. |
+| **ORM / Data Tier**| `Sequelize` | Object-Relational Mapping supporting PostgreSQL in production/dev and SQLite for tests and light fallbacks. |
+| **Databases** | `PostgreSQL` / `SQLite` | Persistent storage with thread-safe pessimistic locking for capacity checks. |
 | **Task Queue** | `Bull` | Offloads resource-heavy template rendering and email dispatch. |
 | **Authentication** | `bcrypt` + `jsonwebtoken` | Secures access routes via securely hashed credentials and signed tokens. |
 
@@ -71,6 +73,7 @@ Ensure you have the following installed locally:
 
 - **Node.js** (`v18.0.0` or higher recommended)
 - **Git**
+- **Docker** (optional, for containerized execution)
 
 ### 2. Local Setup & Installation
 
@@ -109,6 +112,24 @@ npm run dev
 ```
 
 The server instances will mount and listen on your configured runtime port (defaulting to `http://localhost:3000`).
+
+### 6. Containerized Deployment (Docker)
+
+To run the application inside a lightweight container:
+
+1. **Build the Docker image:**
+
+   ```bash
+   docker build -t wow-mom-app .
+   ```
+
+2. **Run the container:**
+
+   ```bash
+   docker run -d -p 3000:3000 --env-file .env wow-mom-app
+   ```
+
+The application will start in production mode, listening on port `3000`.
 
 ---
 
