@@ -1,6 +1,5 @@
 # WoW Mom Support Group Platform 🤱✨
 
-[![Lifecycle: Gated ADLC](https://img.shields.io/badge/Lifecycle-Verified%20ADLC-2ea043?style=flat-square)](./adlc_evaluation_report.md)
 [![Node.js Engine](https://img.shields.io/badge/Node.js-%3E%3D18.0.0-339933?style=flat-square&logo=node.js)](package.json)
 [![Database: PostgreSQL / SQLite](https://img.shields.io/badge/Database-PostgreSQL%20%2F%20SQLite-003B57?style=flat-square&logo=postgresql)](src/config/database.js)
 [![Docker: Supported](https://img.shields.io/badge/Docker-Supported-2496ED?style=flat-square&logo=docker)](Dockerfile)
@@ -140,14 +139,6 @@ Execute automated suite coverage validating business rules and model validations
 ```bash
 npm test
 ```
-
----
-
-## 📑 ADLC Verification Status
-
-This project was built and audited under strict adherence to the **Application Development Lifecycle (ADLC)** framework. Every individual lifecycle phase successfully cleared automated testing gates and architectural reviews prior to integration.
-
-👉 **View the full engineering review report:** [ADLC Lifecycle Evaluation Report](./adlc_evaluation_report.md)
 
 ---
 

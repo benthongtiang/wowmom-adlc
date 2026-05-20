@@ -4,50 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Repo Is
 
-This is the **WoW Mom App** — a platform for registering and placing new mothers into small support groups. Three user roles: **Mothers** (applicants), **Group Leaders** (facilitators), and **Admins** (operators). The project is currently in spec-driven development using the ADLC workflow (see below).
+This is the **WoW Mom App** — a platform for registering and placing new mothers into small support groups. Three user roles: **Mothers** (applicants), **Group Leaders** (facilitators), and **Admins** (operators).
 
-The `adlc-toolkit/` subdirectory is the shared ADLC toolkit (symlinked to `~/.claude/skills/`). Project specs, architecture, and knowledge artifacts live in `.adlc/`.
-
-## ADLC Workflow
-
-All feature work goes through the ADLC pipeline. The canonical sequence:
-
-```
-/spec → /validate → /architect → /validate → implement → /reflect → /review → merge → /wrapup
-```
-
-- **`/proceed REQ-xxx`** — runs the full pipeline end-to-end (validate → architect → implement → reflect → review → PR → wrapup)
-- **`/sprint`** — parallel `/proceed` across multiple REQs
-- **`/bugfix <description>`** — streamlined bug fix with the same deploy strategy as a feature
-- **`/status`** — show current state of all ADLC work
-- **`/spec <feature request>`** — write a new requirement spec
-- **`/architect REQ-xxx`** — break a spec into tasks
-- **`/validate`** — gate-check any ADLC phase output before advancing
-- **`/reflect`** — post-implementation self-review
-- **`/review`** — multi-agent code review (correctness, quality, architecture, tests, security)
-- **`/wrapup REQ-xxx`** — commit, merge, deploy, capture knowledge
-- **`/analyze`** — codebase health audit
-- **`/canary`** — canary deploy with smoke tests
-
-Never implement without a validated spec. Never skip a gate. If a step doesn't apply, say so explicitly — don't silently omit it.
-
-## Project Structure
-
-```
-.adlc/
-  context/           # project-overview.md, architecture.md, conventions.md, taxonomy.md
-  specs/             # REQ-xxx-*/ directories (requirement.md + tasks/)
-  templates/         # local copies of toolkit templates
-adlc-toolkit/        # toolkit source (symlinked to ~/.claude/skills/)
-  agents/            # sub-agent definitions for /proceed phases
-  */SKILL.md         # skill definitions
-  templates/         # canonical templates
-  presets/           # stack-specific config starters
-```
 
 ## Architecture
 
-Four layers (see `.adlc/context/architecture.md`):
+Four layers:
 
 1. **Client/UI** — persona-specific views (`screens/mother/`, `screens/leader/`, `screens/admin/`), responsive for mobile
 2. **API Routing** — role-gated endpoints at `/auth`, `/mothers`, `/groups`, `/applications`, `/admin`
@@ -82,12 +44,3 @@ Source layout: `src/components/`, `src/screens/{mother,leader,admin}/`, `src/ser
 - Branch per REQ, format: `feat/REQ-xxx-slug` or `agent/REQ-xxx-slug`
 - Commit format: `feat(scope): description [TASK-xxx]`
 - PRs require validated test coverage for state-modifying logic
-- Merge order for cross-repo work is declared in `.adlc/config.yml`
-
-## Retrieval Taxonomy
-
-When writing specs or tagging artifacts, use values from `.adlc/context/taxonomy.md`:
-- **component**: `API/auth`, `API/groups`, `API/applications`, `UI/mother`, `UI/leader`, `UI/admin`, `services/notifications`
-- **domain**: `auth`, `discovery`, `applications`, `interviews`, `roster`, `analytics`
-- **stack**: `react`, `react-native`, `nodejs`, `express`, `sql`
-- **concerns**: `security`, `capacity-enforcement`, `state-consistency`, `mobile-responsiveness`, `notifications`
