@@ -1,0 +1,7 @@
+- [x] Phase 0: Preflight & Resolve Target (Generate Run ID, create run folder, copy artifacts, choose target)
+- [x] Phase 1: Codebase Analysis (Invoke /deploy-analyze, detect stack/port/database, verify configs)
+- [x] Phase 2: Environment Configuration (Invoke /deploy-env, discover env vars, gather secrets)
+- [x] Phase 3: Service Provisioning (Invoke /deploy-provision, provision DB/app, map domain/port)
+- [x] Phase 4: Trigger & Build Monitor (Invoke /deploy-trigger, stream logs, health checks)
+- [x] Phase 5: Self-Healing & Redeployment Loop (Invoke /deploy-heal on failure, limit to 3 retries - skipped)
+- [x] Phase 6: Health Verification & Handover (HTTP verify, output summary report)
