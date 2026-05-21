@@ -8,6 +8,7 @@ export default function DiscoveryScreen({ initialGroups = [], onApply }) {
   const [groups, setGroups] = useState(initialGroups);
   const [filterTime, setFilterTime] = useState('All');
   const [filterStatus, setFilterStatus] = useState('All');
+  const [filterDistance, setFilterDistance] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [applyingId, setApplyingId] = useState(null);
   const [pipelineLogs, setPipelineLogs] = useState([]);
@@ -24,12 +25,17 @@ export default function DiscoveryScreen({ initialGroups = [], onApply }) {
       result = result.filter((g) => g.group_status !== 'Full' && g.current_member_count < g.max_capacity);
     }
 
+    if (filterDistance !== 'All') {
+      const maxDist = parseFloat(filterDistance);
+      result = result.filter((g) => g.distance !== null && g.distance !== undefined && g.distance <= maxDist);
+    }
+
     if (searchQuery) {
       result = result.filter((g) => g.group_name.toLowerCase().includes(searchQuery.toLowerCase()));
     }
 
     setGroups(result);
-  }, [initialGroups, filterTime, filterStatus, searchQuery]);
+  }, [initialGroups, filterTime, filterStatus, filterDistance, searchQuery]);
 
   const handleApplyClick = async (group) => {
     if (group.group_status === 'Full' || group.current_member_count >= group.max_capacity) {
@@ -88,6 +94,16 @@ export default function DiscoveryScreen({ initialGroups = [], onApply }) {
           </label>
 
           <label style={styles.label}>
+            Distance:
+            <select value={filterDistance} onChange={(e) => setFilterDistance(e.target.value)} style={styles.select}>
+              <option value="All">Any Distance</option>
+              <option value="2">Within 2 miles</option>
+              <option value="5">Within 5 miles</option>
+              <option value="10">Within 10 miles</option>
+            </select>
+          </label>
+
+          <label style={styles.label}>
             Availability:
             <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={styles.select}>
               <option value="All">Show All</option>
@@ -119,7 +135,7 @@ export default function DiscoveryScreen({ initialGroups = [], onApply }) {
                 <div style={styles.metaGrid}>
                   <span style={styles.metaItem}>🕒 {group.meeting_time}</span>
                   <span style={styles.metaItem}>🔄 {group.meeting_frequency}</span>
-                  <span style={styles.metaItem}>📍 {group.address || 'Remote / Disclosed on join'}</span>
+                  <span style={styles.metaItem}>📍 {group.distance !== null && group.distance !== undefined ? `${group.distance.toFixed(1)} miles away` : (group.address || 'Remote / Disclosed on join')}</span>
                   <span style={styles.metaItem}>
                     👥 {group.current_member_count} / {group.max_capacity} spots
                   </span>

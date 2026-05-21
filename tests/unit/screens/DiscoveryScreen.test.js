@@ -70,4 +70,50 @@ describe('Frontend Persona UI Screen Component Logic Verification', () => {
     expect(pendingResult.displayEmail).toBe('••••••••@peer.masked');
     expect(pendingResult.displayPhone).toBe('••••••••••');
   });
+
+  test('Discovery distance filtering logic: Filters groups by geodesic distance limit correctly', () => {
+    const mockGroupsWithDistance = [
+      {
+        group_id: 'g1',
+        group_name: 'Close Group',
+        distance: 0.9,
+      },
+      {
+        group_id: 'g2',
+        group_name: 'Mid Group',
+        distance: 4.5,
+      },
+      {
+        group_id: 'g3',
+        group_name: 'Far Group',
+        distance: 12.1,
+      },
+      {
+        group_id: 'g4',
+        group_name: 'No Coord Group',
+        distance: null,
+      }
+    ];
+
+    const filterGroupsByDistance = (groups, maxDistance) => {
+      if (maxDistance === 'All') return groups;
+      const limit = parseFloat(maxDistance);
+      return groups.filter((g) => g.distance !== null && g.distance !== undefined && g.distance <= limit);
+    };
+
+    const within2Miles = filterGroupsByDistance(mockGroupsWithDistance, '2');
+    expect(within2Miles.length).toBe(1);
+    expect(within2Miles[0].group_name).toBe('Close Group');
+
+    const within5Miles = filterGroupsByDistance(mockGroupsWithDistance, '5');
+    expect(within5Miles.length).toBe(2);
+    expect(within5Miles.map(g => g.group_name)).toContain('Close Group');
+    expect(within5Miles.map(g => g.group_name)).toContain('Mid Group');
+
+    const within10Miles = filterGroupsByDistance(mockGroupsWithDistance, '10');
+    expect(within10Miles.length).toBe(2);
+
+    const allDistances = filterGroupsByDistance(mockGroupsWithDistance, 'All');
+    expect(allDistances.length).toBe(4);
+  });
 });
