@@ -1,7 +1,7 @@
 'use strict';
 
 const { Op } = require('sequelize');
-const { sequelize, Application, Group, Mother } = require('../models');
+const { sequelize, Application, Group, Mother, Leader } = require('../models');
 const { APPLICATION_STATES, GROUP_STATUSES, USER_TYPES } = require('../models/constants');
 const NotificationService = require('./NotificationService');
 const appConfig = require('../config/appConfig');
@@ -50,6 +50,17 @@ class ApplicationService {
 
       if (!group) {
         throw new Error(`Group ${groupId} does not exist`);
+      }
+
+      // Leader Approval check (BR-4)
+      const leader = await Leader.findByPk(group.leader_id, {
+        lock: t.LOCK.SHARE,
+        transaction: t,
+      });
+
+      if (!leader || !leader.approved_by_admin) {
+        logger.warn(`Submission blocked: Leader ${group.leader_id} is not approved by admin`);
+        throw new Error(`Group leader must be approved by an admin before submitting applications`);
       }
 
       if (group.group_status === GROUP_STATUSES.FULL || group.current_member_count >= group.max_capacity) {
@@ -186,6 +197,15 @@ class ApplicationService {
       }
 
       await group.update(groupUpdates, { transaction: t });
+
+      if (newCount >= group.max_capacity) {
+        await NotificationService.dispatch({
+          userId: group.leader_id,
+          userType: USER_TYPES.LEADER,
+          notificationType: 'GROUP_FULL',
+          message: `Hello Leader,\n\nYour group "${group.group_name}" has reached its maximum capacity of ${group.max_capacity} members.`,
+        });
+      }
 
       logger.info(`Successfully activated participant ${applicationId}. New group member count: ${newCount}`);
       return application;
