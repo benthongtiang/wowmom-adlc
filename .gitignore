@@ -4,4 +4,14 @@ coverage/
 .env.local
 *.log
 .DS_Store
-.adlc/
+
+# ADLC worktrees (used by /proceed for parallel session isolation)
+.worktrees/
+
+# Claude Code per-user permission overrides (team settings live in .claude/settings.json)
+.claude/settings.local.json
+
+# ADLC counters are global (~/.claude/.global-next-req, ~/.claude/.global-next-bug) — not per-project
+# Legacy per-project counters (deprecated, no longer read/written — ignored if present)
+.adlc/.next-bug
+.adlc/.next-req

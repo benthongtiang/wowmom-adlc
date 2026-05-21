@@ -44,3 +44,12 @@ Source layout: `src/components/`, `src/screens/{mother,leader,admin}/`, `src/ser
 - Branch per REQ, format: `feat/REQ-xxx-slug` or `agent/REQ-xxx-slug`
 - Commit format: `feat(scope): description [TASK-xxx]`
 - PRs require validated test coverage for state-modifying logic
+
+## ADLC Commands
+
+- `/init` — Bootstrap or re-initialize the `.adlc/` directory structure.
+- `/spec` — Create or update specifications in `.adlc/specs/`.
+- `/architect` — Create or update architecture documents in `.adlc/context/`.
+- `/proceed` — Execute the full development pipeline automatically.
+- `/review` — Perform automated code review and lint check.
+- `/bugfix` — Debug and repair issues / failing tests.
