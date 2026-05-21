@@ -5,6 +5,7 @@ const { sequelize, Mother, Leader, Group, Application } = require('./models');
 const { APPLICATION_STATES, GROUP_STATUSES } = require('./models/constants');
 const { ApplicationService, InterviewService } = require('./services');
 const { logger } = require('./utils/logger');
+const { getDistance } = require('./utils/distance');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,14 +21,32 @@ let seededGroupId;
  * Helper to get active database state
  */
 async function getSystemState() {
-  const groups = await Group.findAll({
+  const mother = seededMotherId ? await Mother.findByPk(seededMotherId) : null;
+
+  const rawGroups = await Group.findAll({
     include: [
       {
         model: Leader,
         as: 'leader',
-        attributes: ['full_name', 'email', 'phone'],
+        attributes: ['full_name', 'email', 'phone', 'approved_by_admin', 'leader_status'],
       },
     ],
+  });
+
+  const groups = rawGroups.map(g => {
+    const gJson = g.toJSON();
+    if (mother && mother.latitude !== null && mother.longitude !== null &&
+        g.latitude !== null && g.longitude !== null) {
+      gJson.distance = getDistance(
+        parseFloat(mother.latitude),
+        parseFloat(mother.longitude),
+        parseFloat(g.latitude),
+        parseFloat(g.longitude)
+      );
+    } else {
+      gJson.distance = null;
+    }
+    return gJson;
   });
 
   const applications = await Application.findAll({
@@ -46,7 +65,11 @@ async function getSystemState() {
     order: [['application_date', 'DESC']],
   });
 
-  return { groups, applications };
+  const leaders = await Leader.findAll({
+    order: [['createdAt', 'DESC']],
+  });
+
+  return { groups, applications, leaders };
 }
 
 // --------------------------------------------------------
@@ -115,6 +138,23 @@ app.post('/api/activate', async (req, res) => {
     res.json({ success: true, application });
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/leaders/:leaderId/approve', async (req, res) => {
+  try {
+    const { leaderId } = req.params;
+    const leader = await Leader.findByPk(leaderId);
+    if (!leader) {
+      return res.status(404).json({ error: 'Leader not found' });
+    }
+    await leader.update({
+      approved_by_admin: true,
+      leader_status: 'Active',
+    });
+    res.json({ success: true, leader });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -713,6 +753,7 @@ async function seedInitialData() {
     password_hash: '$2b$10$samplehashedpassword',
     phone: '555-0199',
     approved_by_admin: true,
+    leader_status: 'Active',
   });
 
   const group = await Group.create({
@@ -721,6 +762,8 @@ async function seedInitialData() {
     leader_id: leader.leader_id,
     meeting_time: 'Morning',
     address: '100 Peace Plaza',
+    latitude: 37.7850,
+    longitude: -122.4294,
     max_capacity: 2, // Set small capacity to easily demo Full state dynamic tag blocking
     current_member_count: 0,
     meeting_frequency: 'Weekly',
@@ -733,8 +776,32 @@ async function seedInitialData() {
     phone: '555-0122',
     address: '42 Babbage Way',
     zip_code: '94102',
+    latitude: 37.7749,
+    longitude: -122.4194,
     num_children: 1,
     children_ages: [1],
+  });
+
+  const pendingLeader = await Leader.create({
+    full_name: 'Marie Curie',
+    email: 'marie.curie@wowmom.org',
+    password_hash: '$2b$10$samplehashedpassword',
+    phone: '555-0299',
+    approved_by_admin: false,
+    leader_status: 'Pending Approval',
+  });
+
+  await Group.create({
+    group_name: 'Science Discovery Lab',
+    description: 'An unapproved group where we experiment with physics and chemistry.',
+    leader_id: pendingLeader.leader_id,
+    meeting_time: 'Afternoon',
+    address: '777 Valencia St',
+    latitude: 37.7599,
+    longitude: -122.4214,
+    max_capacity: 5,
+    current_member_count: 0,
+    meeting_frequency: 'Weekly',
   });
 
   seededMotherId = mother.mother_id;

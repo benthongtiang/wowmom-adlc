@@ -29,6 +29,11 @@ async function main() {
     });
     logger.info(`Created Verified Leader: ${leader.full_name} (${leader.email})`);
 
+    // Geocode and calculate distance demo
+    const GeocodingService = require('./services/GeocodingService');
+    const { getDistance } = require('./utils/distance');
+
+    const groupCoords = await GeocodingService.geocode('100 Peace Plaza');
     // 3. Create Sample Local Support Group
     const group = await Group.create({
       group_name: 'Downtown Sunrise Circle',
@@ -36,13 +41,16 @@ async function main() {
       leader_id: leader.leader_id,
       meeting_time: 'Morning',
       address: '100 Peace Plaza, Suite 4B',
+      latitude: groupCoords.latitude,
+      longitude: groupCoords.longitude,
       max_capacity: 5,
       current_member_count: 0,
       meeting_frequency: 'Weekly',
     });
-    logger.info(`Scaffolded Group: "${group.group_name}" [Capacity: ${group.max_capacity}]`);
+    logger.info(`Scaffolded Group: "${group.group_name}" [Capacity: ${group.max_capacity}] at coordinates [${group.latitude}, ${group.longitude}]`);
 
     // 4. Create Registering Mother
+    const motherCoords = await GeocodingService.geocode('42 Babbage Way');
     const mother = await Mother.create({
       full_name: 'Ada Lovelace',
       email: 'ada.lovelace@example.com',
@@ -50,10 +58,15 @@ async function main() {
       phone: '555-0122',
       address: '42 Babbage Way',
       zip_code: '94102',
+      latitude: motherCoords.latitude,
+      longitude: motherCoords.longitude,
       num_children: 1,
       children_ages: [1],
     });
-    logger.info(`Registered Mother Candidate: ${mother.full_name}`);
+    logger.info(`Registered Mother Candidate: ${mother.full_name} at coordinates [${mother.latitude}, ${mother.longitude}]`);
+
+    const distance = getDistance(mother.latitude, mother.longitude, group.latitude, group.longitude);
+    logger.info(`Determined geodesic distance between mother and group: ${distance} miles`);
 
     logger.info('\n--- [PIPELINE STAGE 1: SUBMISSION] ---');
     // 5. Submit Application
