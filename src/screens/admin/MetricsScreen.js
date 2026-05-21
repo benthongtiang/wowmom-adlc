@@ -44,7 +44,7 @@ export default function MetricsScreen({ initialMetrics, initialPendingLeaders = 
         <h2 style={styles.sectionTitle}>Platform Funnel Conversion Metrics</h2>
         <div style={styles.metricsGrid}>
           <div style={styles.metricCard}>
-            <span style={styles.metricLabel}>Total Registered Mothers</span>
+            <span style={styles.metricLabel}>Total Active Mothers</span>
             <span style={styles.metricValue}>{metrics.totalMothers}</span>
           </div>
           <div style={styles.metricCard}>
@@ -58,11 +58,11 @@ export default function MetricsScreen({ initialMetrics, initialPendingLeaders = 
             <span style={styles.metricValue}>{metrics.activeApplications}</span>
           </div>
           <div style={styles.metricCard}>
-            <span style={styles.metricLabel}>Intake Conversion Rate</span>
+            <span style={styles.metricLabel}>Conversion Rate</span>
             <span style={styles.metricValueHighlight}>{metrics.conversionRate}</span>
           </div>
           <div style={styles.metricCardWide}>
-            <span style={styles.metricLabel}>Global Capacity Utilization Gate</span>
+            <span style={styles.metricLabel}>Capacity Utilization</span>
             <div style={styles.barWrap}>
               <div style={{ ...styles.barFill, width: metrics.capacityUtilization }}></div>
             </div>

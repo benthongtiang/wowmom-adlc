@@ -5,6 +5,7 @@ const { sequelize, Mother, Leader, Group, Application } = require('./models');
 const { APPLICATION_STATES, GROUP_STATUSES } = require('./models/constants');
 const { ApplicationService, InterviewService } = require('./services');
 const { logger } = require('./utils/logger');
+const { getDistance } = require('./utils/distance');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,14 +21,32 @@ let seededGroupId;
  * Helper to get active database state
  */
 async function getSystemState() {
-  const groups = await Group.findAll({
+  const mother = seededMotherId ? await Mother.findByPk(seededMotherId) : null;
+
+  const rawGroups = await Group.findAll({
     include: [
       {
         model: Leader,
         as: 'leader',
-        attributes: ['full_name', 'email', 'phone'],
+        attributes: ['full_name', 'email', 'phone', 'approved_by_admin', 'leader_status'],
       },
     ],
+  });
+
+  const groups = rawGroups.map(g => {
+    const gJson = g.toJSON();
+    if (mother && mother.latitude !== null && mother.longitude !== null &&
+        g.latitude !== null && g.longitude !== null) {
+      gJson.distance = getDistance(
+        parseFloat(mother.latitude),
+        parseFloat(mother.longitude),
+        parseFloat(g.latitude),
+        parseFloat(g.longitude)
+      );
+    } else {
+      gJson.distance = null;
+    }
+    return gJson;
   });
 
   const applications = await Application.findAll({
@@ -46,7 +65,11 @@ async function getSystemState() {
     order: [['application_date', 'DESC']],
   });
 
-  return { groups, applications };
+  const leaders = await Leader.findAll({
+    order: [['createdAt', 'DESC']],
+  });
+
+  return { groups, applications, leaders };
 }
 
 // --------------------------------------------------------
@@ -115,6 +138,23 @@ app.post('/api/activate', async (req, res) => {
     res.json({ success: true, application });
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/leaders/:leaderId/approve', async (req, res) => {
+  try {
+    const { leaderId } = req.params;
+    const leader = await Leader.findByPk(leaderId);
+    if (!leader) {
+      return res.status(404).json({ error: 'Leader not found' });
+    }
+    await leader.update({
+      approved_by_admin: true,
+      leader_status: 'Active',
+    });
+    res.json({ success: true, leader });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -466,6 +506,15 @@ app.get('/', (req, res) => {
           <h2 class="card-title" style="margin: 0;">🏢 Active Local Support Groups</h2>
           <span style="font-size: 0.8rem; color: var(--text-muted);">Capacity Gated</span>
         </div>
+        <div style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--surface-border); display: flex; gap: 1rem; align-items: center;">
+          <span style="font-size: 0.9rem; color: var(--text-muted);">Filter by Distance:</span>
+          <select id="distanceFilter" onchange="filterGroupsByDistance()" style="background: var(--bg); color: var(--text); border: 1px solid var(--surface-border); padding: 0.4rem 0.8rem; border-radius: 6px; font-family: inherit; font-size: 0.9rem; outline: none; cursor: pointer;">
+            <option value="any">Any Distance</option>
+            <option value="2">Within 2 miles</option>
+            <option value="5">Within 5 miles</option>
+            <option value="10">Within 10 miles</option>
+          </select>
+        </div>
         <div class="table-container">
           <table>
             <thead>
@@ -508,6 +557,51 @@ app.get('/', (req, res) => {
         </div>
       </div>
 
+      <!-- Admin Oversight Dashboard Section -->
+      <div class="card" style="padding: 0;">
+        <div style="padding: 1.5rem; border-bottom: 1px solid var(--surface-border);">
+          <h2 class="card-title" style="margin: 0;">👑 Admin Oversight & Leader Approvals</h2>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
+            Global funnel telemetry and pending leader credentials verification queue
+          </p>
+        </div>
+        
+        <!-- Metrics Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; padding: 1.5rem; border-bottom: 1px solid var(--surface-border);">
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--surface-border); padding: 1rem; border-radius: 8px;">
+            <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Total Applicants</div>
+            <div id="metricTotal" style="font-size: 1.8rem; font-weight: 700; color: var(--primary); margin-top: 0.25rem;">0</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--surface-border); padding: 1rem; border-radius: 8px;">
+            <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Interviews Pending</div>
+            <div id="metricPending" style="font-size: 1.8rem; font-weight: 700; color: var(--warning); margin-top: 0.25rem;">0</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--surface-border); padding: 1rem; border-radius: 8px;">
+            <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Active Roster</div>
+            <div id="metricActive" style="font-size: 1.8rem; font-weight: 700; color: var(--success); margin-top: 0.25rem;">0</div>
+          </div>
+        </div>
+
+        <div style="padding: 1.5rem 1.5rem 0.5rem 1.5rem; font-weight: 600; font-size: 1rem; color: var(--primary);">
+          ⏳ Pending Leaders Queue
+        </div>
+        <div class="table-container" style="border: none; border-radius: 0;">
+          <table>
+            <thead>
+              <tr>
+                <th>Leader Name</th>
+                <th>Contact Info</th>
+                <th>Admin Approval Status</th>
+                <th>Oversight Action</th>
+              </tr>
+            </thead>
+            <tbody id="leadersTableBody">
+              <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Loading queue...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
   </main>
 
@@ -515,15 +609,29 @@ app.get('/', (req, res) => {
 
   <script>
     // Live UI Control Dashboard Logic
+    let allGroups = [];
+
     async function loadSystemState() {
       try {
         const res = await fetch('/api/state');
         const state = await res.json();
-        renderGroups(state.groups);
+        allGroups = state.groups || [];
+        filterGroupsByDistance();
         renderApplications(state.applications);
+        renderAdminDashboard(state);
       } catch (err) {
         showError("Failed to synchronize active state: " + err.message);
       }
+    }
+
+    function filterGroupsByDistance() {
+      const val = document.getElementById('distanceFilter').value;
+      let filtered = allGroups;
+      if (val !== 'any') {
+        const maxDist = parseFloat(val);
+        filtered = allGroups.filter(g => g.distance !== null && g.distance <= maxDist);
+      }
+      renderGroups(filtered);
     }
 
     function renderGroups(groups) {
@@ -535,13 +643,32 @@ app.get('/', (req, res) => {
 
       tbody.innerHTML = groups.map(g => {
         const isFull = g.group_status === 'Full' || g.current_member_count >= g.max_capacity;
-        const badgeClass = isFull ? 'badge-full' : 'badge-accepted';
-        const badgeText = isFull ? 'Capacity Reached' : 'Available Available';
+        const leaderNotApproved = g.leader && !g.leader.approved_by_admin;
+        
+        let badgeClass = 'badge-accepted';
+        let badgeText = 'Available';
+        if (isFull) {
+          badgeClass = 'badge-full';
+          badgeText = 'Capacity Reached';
+        } else if (leaderNotApproved) {
+          badgeClass = 'badge-pending';
+          badgeText = 'Awaiting Leader Approval';
+        }
+
+        const isGated = isFull || leaderNotApproved;
 
         return \`
           <tr>
-            <td style="font-weight: 600;">\${g.group_name}</td>
-            <td>\${g.leader ? g.leader.full_name : 'Unassigned'}</td>
+            <td style="font-weight: 600;">
+              <div>\${g.group_name}</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal; margin-top: 2px;">
+                📍 \${g.distance !== null ? g.distance.toFixed(1) + ' miles away' : 'N/A'}
+              </div>
+            </td>
+            <td>
+              <div>\${g.leader ? g.leader.full_name : 'Unassigned'}</div>
+              \${leaderNotApproved ? '<div style="font-size: 0.7rem; color: var(--warning);">⚠️ Leader Pending Approval</div>' : ''}
+            </td>
             <td>
               <span class="badge \${badgeClass}">\${badgeText}</span>
               <span style="font-size: 0.8rem; color: var(--text-muted); margin-left: 0.5rem;">
@@ -549,8 +676,8 @@ app.get('/', (req, res) => {
               </span>
             </td>
             <td>
-              <button class="btn btn-sm btn-outline" onclick="submitApplication('\${g.group_id}')" \${isFull ? 'disabled' : ''}>
-                \${isFull ? '🔒 Gated' : 'Apply Now'}
+              <button class="btn btn-sm btn-outline" onclick="submitApplication('\${g.group_id}')" \${isGated ? 'disabled' : ''}>
+                \${isGated ? '🔒 Gated' : 'Apply Now'}
               </button>
             </td>
           </tr>
@@ -621,6 +748,68 @@ app.get('/', (req, res) => {
           </tr>
         \`;
       }).join('');
+    }
+
+    function renderAdminDashboard(state) {
+      // 1. Calculate metrics
+      const apps = state.applications || [];
+      const total = apps.length;
+      const pending = apps.filter(a => a.status === 'Pending' || a.status === 'Interview Scheduled').length;
+      const active = apps.filter(a => a.status === 'Active Participant').length;
+
+      document.getElementById('metricTotal').innerText = total;
+      document.getElementById('metricPending').innerText = pending;
+      document.getElementById('metricActive').innerText = active;
+
+      // 2. Render pending leaders
+      const leaders = state.leaders || [];
+      const pendingLeaders = leaders.filter(l => !l.approved_by_admin);
+      const tbody = document.getElementById('leadersTableBody');
+
+      if (pendingLeaders.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">🎉 All leaders are approved and active. No pending approvals in queue.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = pendingLeaders.map(l => {
+        return \`
+          <tr>
+            <td>
+              <div style="font-weight: 600;">\${l.full_name}</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Registered: \${new Date(l.createdAt).toLocaleDateString()}</div>
+            </td>
+            <td>
+              <div style="font-size: 0.9rem;">\${l.email}</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">\${l.phone || 'No phone'}</div>
+            </td>
+            <td>
+              <span class="badge badge-pending">\${l.leader_status}</span>
+            </td>
+            <td>
+              <button class="btn btn-sm btn-success" onclick="approveLeader('\${l.leader_id}')">
+                ✓ Approve Leader
+              </button>
+            </td>
+          </tr>
+        \`;
+      }).join('');
+    }
+
+    async function approveLeader(leaderId) {
+      hideError();
+      try {
+        const res = await fetch(\`/api/leaders/\${leaderId}/approve\`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Approval failed');
+
+        showToast('👑 Leader successfully approved and activated!');
+        loadSystemState();
+      } catch (err) {
+        showError(err.message);
+      }
     }
 
     async function submitApplication(groupId) {
@@ -713,6 +902,7 @@ async function seedInitialData() {
     password_hash: '$2b$10$samplehashedpassword',
     phone: '555-0199',
     approved_by_admin: true,
+    leader_status: 'Active',
   });
 
   const group = await Group.create({
@@ -721,6 +911,8 @@ async function seedInitialData() {
     leader_id: leader.leader_id,
     meeting_time: 'Morning',
     address: '100 Peace Plaza',
+    latitude: 37.7850,
+    longitude: -122.4294,
     max_capacity: 2, // Set small capacity to easily demo Full state dynamic tag blocking
     current_member_count: 0,
     meeting_frequency: 'Weekly',
@@ -733,8 +925,32 @@ async function seedInitialData() {
     phone: '555-0122',
     address: '42 Babbage Way',
     zip_code: '94102',
+    latitude: 37.7749,
+    longitude: -122.4194,
     num_children: 1,
     children_ages: [1],
+  });
+
+  const pendingLeader = await Leader.create({
+    full_name: 'Marie Curie',
+    email: 'marie.curie@wowmom.org',
+    password_hash: '$2b$10$samplehashedpassword',
+    phone: '555-0299',
+    approved_by_admin: false,
+    leader_status: 'Pending Approval',
+  });
+
+  await Group.create({
+    group_name: 'Science Discovery Lab',
+    description: 'An unapproved group where we experiment with physics and chemistry.',
+    leader_id: pendingLeader.leader_id,
+    meeting_time: 'Afternoon',
+    address: '777 Valencia St',
+    latitude: 37.7599,
+    longitude: -122.4214,
+    max_capacity: 5,
+    current_member_count: 0,
+    meeting_frequency: 'Weekly',
   });
 
   seededMotherId = mother.mother_id;
