@@ -15,3 +15,5 @@ coverage/
 # Legacy per-project counters (deprecated, no longer read/written — ignored if present)
 .adlc/.next-bug
 .adlc/.next-req
+.adlc/config.yml
+

@@ -1,7 +1,0 @@
-targets:
-  coolify:
-    api_url: "https://cru.engineer"
-    api_token: "11|j1UaSsRdtjB5zbxPqVi5L6I5E6kKdO5iIZfFnWqwe844587d"
-    public_domain: "benAPv1.cru.engineer"
-    project: "wowmom"
-    environment: "production"
